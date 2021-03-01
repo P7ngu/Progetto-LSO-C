@@ -18,6 +18,7 @@
 #define MAXLINE 4096
 #define SOCKETERROR (-1)
 #define SERVER_BACKLOG 100
+//scp -i  ~/.ssh/id_rsa \\wsl$\Ubuntu-20.04\home\pingu\LSO-C azureuser@40.68.217.34
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
@@ -80,6 +81,7 @@ void* handle_connection(void* p_client_socket){
     char actualpath[_PC_PATH_MAX+1];
 
     //read the client's message: which file to read
+    clock_t before = clock();
 
     while((bytes_read = read(client_socket, buffer+msgsize, sizeof((buffer)-msgsize-1)) >0 )){
         msgsize+= bytes_read;
@@ -93,28 +95,14 @@ void* handle_connection(void* p_client_socket){
     printf("REQUEST: %s \n", buffer);
     fflush(stdout);
 
-    //validity check
-    if(realpath(buffer, actualpath)==NULL){
-        printf("ERROR BAD PATH : %s \n", buffer);
-        close(client_socket);
-        return NULL;
-    }
-
-    //read file
-    FILE*fp=fopen(actualpath, "r");
-    if(!fp){
-        printf("ERROR OPEN : %s \n", buffer);
-        close(client_socket);
-        return NULL;
-    }
-
-    while((bytes_read=fread(buffer, 1, BUFSIZ, fp))>0){
+    while(1){
         printf("Sending %zu bytes \n", bytes_read);
+         clock_t difference = clock() - before;
+         bytes_read = (long) difference;
         write(client_socket, buffer, bytes_read);
     }
 
     close(client_socket);
-    fclose(fp);
     printf("Closing connection \n");
 
     return NULL;
