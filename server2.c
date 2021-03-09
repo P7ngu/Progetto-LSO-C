@@ -53,7 +53,7 @@ int main(int argc, char**argv){
 
         printf("Connected! \n");
 
-       //handle_connection(client_socket);
+        handle_connection((int*)client_socket);
         pthread_t t;
         int*pclient=malloc(sizeof(int));
         *pclient=client_socket;
@@ -84,10 +84,14 @@ void* handle_connection(void* p_client_socket){
     //read the client's message: which file to read
     clock_t before = clock();
 
+    while(1){
     while((bytes_read = read(client_socket, buffer+msgsize, sizeof((buffer)-msgsize-1)) >0 )){
         msgsize+= bytes_read;
         if(msgsize>BUFSIZ-1 || buffer[msgsize-1]=='\n') break;
     }
+    }
+
+
 
 
     check(bytes_read, "recv error \n");
