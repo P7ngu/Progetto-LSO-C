@@ -87,15 +87,16 @@ void *connection_handler(void *socket_desc)
 	char *message , client_message[2000];
 	
 	//Send some messages to the client
-	message = "Greetings! I am your connection handler\n";
+	message = "Connessione effettuata, inviare messaggio\n";
 	write(sock , message , strlen(message));
-	
-	message = "Now type something and i shall repeat what you type \n";
-	write(sock , message , strlen(message));
+
 	
 	//Receive a message from client
-	read_size = recv(sock, client_message, 2000, 0);
-	puts(read_size);
+	int client_socket = *((int*)socket_desc);
+    //free(p_client_socket);
+    char buffer[BUFSIZ];
+    size_t bytes_read;
+    int msgsize = 0;
 	
 	while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
 	{
@@ -107,8 +108,15 @@ void *connection_handler(void *socket_desc)
         for(int i =0;i<strlen(client_message);i++)
         client_message[i]= '\0';
 	}
+	   while(1){
+    while((bytes_read = read(client_socket, buffer+msgsize, sizeof((buffer)-msgsize-1)) >0 )){
+        msgsize+= bytes_read;
+        if(msgsize>BUFSIZ-1 || buffer[msgsize-1]=='\n') break;
+    }
+    }
+	printf("Messaggio %s", buffer);
 	
-	if(read_size == 0)
+	if(bytes_read == 0)
 	{
 		puts("Client disconnected");
 		fflush(stdout);
