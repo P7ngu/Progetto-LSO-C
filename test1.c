@@ -18,17 +18,45 @@
 #include <stdbool.h> 
 #define MAX_NAME 10
 #define MAX_PASSWORD 15
+#define MAX_PARAM 100
 
 struct nodoUtenti{
     char nickname[MAX_NAME];
     char password[MAX_PASSWORD];
     int gettoni;
-    bool isOnline;
+    int isOnline;
     int numeroPuntato;
     struct nodoUtenti* next;
 };
 
-struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, bool isOnline, int numeroPuntato)
+struct param_thread{
+    int*sock;
+    FILE*file;
+    struct nodoUtenti* lista;
+    char param0[MAX_PARAM];
+    char param1[MAX_PARAM];
+    char param2[MAX_PARAM];
+    char param3[MAX_PARAM];
+    char param4[MAX_PARAM];
+};
+
+struct param_thread* CreaParametriThread(int* sock, FILE* file, char* p0, char*p1, char*p2, char*p3, char*p4, struct nodoUtenti* lista){
+    struct param_thread* nuovoParametro=(struct param_thread*)malloc(sizeof(struct param_thread));
+    if(!nuovoParametro) return NULL;
+    nuovoParametro->sock=sock;  //?
+    nuovoParametro->file=file;
+    strcpy(nuovoParametro->param0, p0);
+    strcpy(nuovoParametro->param1, p1);
+    strcpy(nuovoParametro->param2, p2);
+    strcpy(nuovoParametro->param3, p3);
+    strcpy(nuovoParametro->param4, p4);
+    nuovoParametro->lista=lista;
+
+    return nuovoParametro;
+}   
+
+
+struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato)
 {
     struct nodoUtenti* nuovoNodo=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     if (!nuovoNodo) return NULL;
@@ -38,11 +66,12 @@ struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, b
     nuovoNodo->isOnline=isOnline;
     nuovoNodo->numeroPuntato=numeroPuntato;
     nuovoNodo->next=NULL;
+     printf("%s %s %d %d %d - ", nickname, password, gettoni, isOnline, numeroPuntato);
 
     return nuovoNodo;
 }
 
-struct nodoUtenti* InserisciCoda (struct nodoUtenti* lista, char* nickname, char*password, int gettoni, bool isOnline, int numeroPuntato)
+struct nodoUtenti* InserisciCoda (struct nodoUtenti* lista, char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato)
 {
     if (!lista) return CreaNodoUtenti (nickname, password, gettoni, isOnline, numeroPuntato);
     lista->next=InserisciCoda (lista->next, nickname, password, gettoni, isOnline, numeroPuntato);
@@ -115,8 +144,7 @@ void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
   }
 }
 
-
-
+/*/
 int main()
 {
    FILE *fp;
@@ -137,3 +165,4 @@ int main()
       
 
 }
+/*/

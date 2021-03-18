@@ -54,7 +54,7 @@ void * cientThread(void *arg)
 int main(){
   int i = 0;
   pthread_t tid[51];
-  while(i<5)
+  while(i<20)
   {
     if( pthread_create(&tid[i], NULL, cientThread, NULL) != 0 )
            printf("Failed to create thread\n");
