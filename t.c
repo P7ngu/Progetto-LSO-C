@@ -10,6 +10,7 @@
 #include "test1.c"
 #define MAX_CHAR 100
 #define PORT 18000
+#define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
 void *connection_handler(void*socket_desc);
@@ -23,6 +24,9 @@ int main(){
 
     lista=LeggiFile(lista, fp);
     fclose(fp);
+
+    printf("Lista utenti: \n");
+    StampaLista(lista);
 
     int socketfd, ret;
     struct sockaddr_in serverAddr;
@@ -134,9 +138,26 @@ void *connection_handler(void* parametri)
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
-            if (strncmp("login", buff, 6) == 0){
+            if (strncmp("login", buff, 5) == 0){
+                //log in corso
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            accessoUtente(buff, lista, fp);
+            if(accessoUtente(buff, lista, fp)==1){
+                char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                strcpy (str, "login_success");
+                strcat (str, "\n");
+                printf(str);
+                printf("dopo reply");
+                write(newSocket, str, sizeof(str));
+            } else{
+                       char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                strcpy (str, "login_fail");
+                strcat (str, "\n");
+                printf(str);
+                printf("dopo reply");
+                write(newSocket, str, sizeof(str));
+            }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
             if (strncmp("online", buff, 8) == 0){
@@ -144,18 +165,25 @@ void *connection_handler(void* parametri)
             checkUtentiOnline(buff, lista, fp);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
+            if (strncmp("puntata", buff, 7) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            betNumber(buff, lista, fp);
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
+            if (strncmp("estrazione", buff, 10) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            extractNumber(buff, lista, fp);
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
 
 
             bzero(buff, size);
-
-            n = 0;
+           // n = 0;
             // copy server message in the buffer
-
-            while ((sbuff[n++] = getchar()) != '\n');
-
+            //while ((sbuff[n++] = getchar()) != '\n');
         // and send that buffer to client
-            write(newSocket, sbuff, sizeof(sbuff));
-            bzero(sbuff,size);
+            //write(newSocket, sbuff, sizeof(sbuff));
+            //bzero(sbuff,size);
 
         }
 
@@ -165,6 +193,60 @@ void *connection_handler(void* parametri)
     //free(socket_desc);
 
     return 0;
+}
+
+int extractNumber(char*data, struct nodoUtenti*lista, FILE*fp){
+    fp=fopen("UltimoNumeroEstratto.txt", "w");
+    if(!fp) {perror("Errore apertura numero estratto"); exit(-1);}
+    int randomNumber=rand() &36;
+     fprintf(fp, "%d\n", randomNumber);
+     printf("\nNumero estratto: %d \n", randomNumber);
+     fclose(fp);
+}
+
+int  betNumber(char* data, struct nodoUtenti* lista,FILE* fp){
+char part1[11];
+char part2[2];
+char part3[11];
+char part4[11];
+
+memmove(part1, &data[0], 10);
+part1[10] = '\0';
+memmove(part2, &data[10], 2);
+part2[2] = '\0';
+memmove(part3, &data[12], 10);
+part3[10]='\0';
+memmove(part4, &data[22], 10);
+part4[10]='\0';
+
+printf("BET: %s \t numero: %s \t nome: %s \t amount: %s", part1, part2, part3, part4);
+strtok(part1, "\n");
+strtok(part2, "\n");
+strtok(part3, "\n");
+strtok(part4, "\n");
+
+//aggiorno file log
+inserisciScommessa(lista, part2, part3, part4);
+
+}
+
+void remove_spaces(char* s) {
+    const char* d = s;
+    do {
+        while (*d == ' ') {
+            ++d;
+        }
+    } while (*s++ = *d++);
+}
+
+
+int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*amount){
+    while(lista){
+        if(strcmp(lista->nickname, nome)==0)
+        lista->numeroPuntato=numero;
+        lista->gettoniPuntati=amount;
+        inserisciScommessa(lista->next, numero, nome, amount);
+    }
 }
 
 int checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
@@ -201,8 +283,11 @@ printf("%s - %s - %s \t", part1, part2, part3);
 strtok(part1, "\n");
 strtok(part2, "\n");
 strtok(part3, "\n");
+remove_spaces(part3);
+remove_spaces(part2);
+remove_spaces(part1);
 
-lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, true, -1);
+lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, true, -1, -1);
 //lista = InserisciCoda(part2, part3, GETTONI_INIZIALI, true, -1, lista);
 fp=fopen("Utenti.txt", "w");
  if(!fp) {perror("ERRORE\n"); exit(0);}
@@ -231,8 +316,14 @@ printf("%s - %s - %s \t", part1, part2, part3);
 strtok(part1, "\n");
 strtok(part2, "\n");
 strtok(part3, "\n");
+remove_spaces(part3);
+remove_spaces(part2);
+remove_spaces(part1);
 
-accessoUtente_server(part2, part3, lista);
+if(accessoUtente_server(part2, part3, lista) ==1) return 1;
+else return 0;
+
+
 }
 
 int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
@@ -243,3 +334,5 @@ int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
     }
     return 0;
 }
+
+

@@ -2,7 +2,7 @@
 //Registrazione e accesso
 //Lista utenti collegati
 //Gettoni di partenza per ogni utente
-//Utenti.txt: nickname | password | gettoni_residui | isOnline | numeroPuntato -> in ordine di gettoni?
+//Utenti.txt: nickname | password | gettoni_residui | isOnline | numeroPuntato | gettoniPuntati
 
 //Gestione partita 
 //Ultimo numero uscito in un file dedicato,
@@ -12,6 +12,8 @@
 
 //Notifica risultati: server -> app android
 //int_operazione ### dati ###
+
+//TIMER IN JAVA IL CLIENT DICE AL SERVER QUANDO ESTRARRE?
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +28,7 @@ struct nodoUtenti{
     int gettoni;
     int isOnline;
     int numeroPuntato;
+    int gettoniPuntati;
     struct nodoUtenti* next;
 };
 
@@ -56,7 +59,7 @@ struct param_thread* CreaParametriThread(int* sock, FILE* file, char* p0, char*p
 }   
 
 
-struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato)
+struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato, int gettoniPuntati)
 {
     struct nodoUtenti* nuovoNodo=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     if (!nuovoNodo) return NULL;
@@ -65,27 +68,28 @@ struct nodoUtenti* CreaNodoUtenti (char* nickname, char*password, int gettoni, i
     nuovoNodo->gettoni=gettoni;
     nuovoNodo->isOnline=isOnline;
     nuovoNodo->numeroPuntato=numeroPuntato;
+    nuovoNodo->gettoniPuntati=gettoniPuntati;
     nuovoNodo->next=NULL;
      printf("%s %s %d %d %d - ", nickname, password, gettoni, isOnline, numeroPuntato);
 
     return nuovoNodo;
 }
 
-struct nodoUtenti* InserisciCoda (struct nodoUtenti* lista, char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato)
+struct nodoUtenti* InserisciCoda (struct nodoUtenti* lista, char* nickname, char*password, int gettoni, int isOnline, int numeroPuntato, int gettoniPuntati)
 {
-    if (!lista) return CreaNodoUtenti (nickname, password, gettoni, isOnline, numeroPuntato);
-    lista->next=InserisciCoda (lista->next, nickname, password, gettoni, isOnline, numeroPuntato);
+    if (!lista) return CreaNodoUtenti (nickname, password, gettoni, isOnline, numeroPuntato, gettoniPuntati);
+    lista->next=InserisciCoda (lista->next, nickname, password, gettoni, isOnline, numeroPuntato, gettoniPuntati);
     return lista;
 }
 
 struct nodoUtenti* LeggiFile (struct nodoUtenti* lista, FILE* fp)
 {
-    int gettoni; int numeroPuntato;
+    int gettoni; int numeroPuntato; int gettoniPuntati;
     char nickname[20], password[20];
     int isOnline;
     while(!feof(fp)){
-        if(fscanf (fp, "%s %s %d %d %d", nickname, password, &gettoni, &isOnline, &numeroPuntato)==5){
-              lista=InserisciCoda(lista, nickname, password, gettoni, isOnline, numeroPuntato);
+        if(fscanf (fp, "%s %s %d %d %d %d", nickname, password, &gettoni, &isOnline, &numeroPuntato, &gettoniPuntati)==6){
+              lista=InserisciCoda(lista, nickname, password, gettoni, isOnline, numeroPuntato, gettoniPuntati);
         }
       
     }
@@ -103,7 +107,7 @@ void ScriviFile (struct nodoUtenti* lista, FILE*fp)
 {
     int n=LunghezzaLista(lista);
     for (int i=0; i<n; i++){
-        fprintf (fp, "%s %s %d %d %d", lista->nickname, lista->password, lista->gettoni, lista->isOnline, lista->numeroPuntato);
+        fprintf (fp, "%s %s %d %d %d %d", lista->nickname, lista->password, lista->gettoni, lista->isOnline, lista->numeroPuntato, lista->gettoniPuntati);
         lista=lista->next;
     }
 }
@@ -111,14 +115,14 @@ void ScriviFile (struct nodoUtenti* lista, FILE*fp)
 void StampaLista(struct nodoUtenti* lista)
 {
     if(!lista) return NULL;
-    printf ("%s %s %d %d %d \n", lista->nickname, lista->password, lista->gettoni, lista->isOnline, lista->numeroPuntato);
+    printf ("n:%s p:%s g:%d o:%d n:%d gp:%d\n", lista->nickname, lista->password, lista->gettoni, lista->isOnline, lista->numeroPuntato, lista->gettoniPuntati);
     return StampaLista(lista->next);
 }
 
 bool contains (struct nodoUtenti* lista, int numero)
 {
     if(!lista) return false;
-    if(lista->gettoni == numero) return true;
+    if(lista->numeroPuntato == numero) return true;
     else return (contains(lista->next, numero));
 }
 
@@ -140,7 +144,7 @@ void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
       }
   }
  for(int i = 0; i < n; i++){
-    fprintf(fp, "%s %s %d %d %d\n", temp[i]->nickname, temp[i]->password, temp[i]->gettoni, temp[i]->isOnline, temp[i]->numeroPuntato);
+    fprintf(fp, "%s %s %d %d %d\n", temp[i]->nickname, temp[i]->password, temp[i]->gettoni, temp[i]->isOnline, temp[i]->numeroPuntato, temp[i]->gettoniPuntati);
   }
 }
 
