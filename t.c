@@ -134,7 +134,24 @@ void *connection_handler(void* parametri)
         
             if (strncmp("register", buff, 8 ) == 0){
 		    pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            registraUtente(buff, lista, fp);
+            if(registraUtente(buff, lista, fp)==1){
+                char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                strcpy (str, "register_success\n\n");
+                printf(str);
+                printf("dopo reply");
+                write(newSocket, str, sizeof(str));
+                send(newSocket, str, sizeof(str), 0);
+            } else{
+                char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                strcpy (str, "register_fail");
+                strcat (str, "\n");
+                printf("%s", str);
+                printf("\ndopo reply\n");
+                write(newSocket, str, sizeof(str));
+                printf("dopo send\n");
+            }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
@@ -150,13 +167,14 @@ void *connection_handler(void* parametri)
                 printf("dopo reply");
                 write(newSocket, str, sizeof(str));
             } else{
-                       char *str;
+                char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "login_fail");
                 strcat (str, "\n");
-                printf(str);
-                printf("dopo reply");
+                printf("%s", str);
+                printf("\ndopo reply\n");
                 write(newSocket, str, sizeof(str));
+                printf("dopo send\n");
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
@@ -287,13 +305,16 @@ remove_spaces(part3);
 remove_spaces(part2);
 remove_spaces(part1);
 
-lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, true, -1, -1);
+if(contains(lista, part2)) return 0;
+
+lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
 //lista = InserisciCoda(part2, part3, GETTONI_INIZIALI, true, -1, lista);
 fp=fopen("Utenti.txt", "w");
  if(!fp) {perror("ERRORE\n"); exit(0);}
 StampaListaToFileInOrdine(lista, fp);
 StampaLista(lista);
 fclose(fp);
+return 1;
 
 }
 

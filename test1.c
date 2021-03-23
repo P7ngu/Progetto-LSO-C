@@ -119,10 +119,10 @@ void StampaLista(struct nodoUtenti* lista)
     return StampaLista(lista->next);
 }
 
-bool contains (struct nodoUtenti* lista, int numero)
+bool contains (struct nodoUtenti* lista, char*data)
 {
     if(!lista) return false;
-    if(lista->numeroPuntato == numero) return true;
+    if(strcmp(lista->nickname, data)==0) return true;
     else return (contains(lista->next, numero));
 }
 
@@ -144,7 +144,7 @@ void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
       }
   }
  for(int i = 0; i < n; i++){
-    fprintf(fp, "%s %s %d %d %d\n", temp[i]->nickname, temp[i]->password, temp[i]->gettoni, temp[i]->isOnline, temp[i]->numeroPuntato, temp[i]->gettoniPuntati);
+    fprintf(fp, "%s %s %d %d %d %d \n", temp[i]->nickname, temp[i]->password, temp[i]->gettoni, temp[i]->isOnline, temp[i]->numeroPuntato, temp[i]->gettoniPuntati);
   }
 }
 
