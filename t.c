@@ -131,6 +131,13 @@ void *connection_handler(void* parametri)
                 printf("Server Exit...\n");
                 break;
             }
+            //TEST
+            char message[10]="ciao\n";
+             if(send(newSocket , message, strlen(message) , 0) < 0)
+             {
+                puts("Send failed");
+                return 1;
+            }
         
             if (strncmp("register", buff, 8 ) == 0){
 		    pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
@@ -140,8 +147,8 @@ void *connection_handler(void* parametri)
                 strcpy (str, "register_success\n\n");
                 printf(str);
                 printf("dopo reply");
-                write(newSocket, str, sizeof(str));
-                send(newSocket, str, sizeof(str), 0);
+               // write(newSocket, str, sizeof(str));
+                send(newSocket, str, strlen(str), 0);
             } else{
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
@@ -149,7 +156,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "\n");
                 printf("%s", str);
                 printf("\ndopo reply\n");
-                write(newSocket, str, sizeof(str));
+                send(newSocket, str, strlen(str), 0);
                 printf("dopo send\n");
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
@@ -165,7 +172,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "\n");
                 printf(str);
                 printf("dopo reply");
-                write(newSocket, str, sizeof(str));
+                send(newSocket, str, strlen(str), 0);
             } else{
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
@@ -173,7 +180,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "\n");
                 printf("%s", str);
                 printf("\ndopo reply\n");
-                write(newSocket, str, sizeof(str));
+                send(newSocket, str, strlen(str), 0);
                 printf("dopo send\n");
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
