@@ -7,16 +7,31 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include<pthread.h> 
+#include <time.h>
 #include "test1.c"
 #define MAX_CHAR 100
 #define PORT 18000
 #define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
+int bet_time=300; //5 minuti tra due bet
+long int start_time;
+long int current_time;
+
 void *connection_handler(void*socket_desc);
+void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 
 int main(){
+
+     pthread_t timer_thread;
+   if( pthread_create(&timer_thread, NULL, startTheTimer, NULL) <0 ){
+    perror("Error while creating timer thread");
+        return 1;
+   }
+
+
+
       FILE *fp;
     struct nodoUtenti* lista=NULL;
     fp=fopen("Utenti.txt", "r");
@@ -94,6 +109,7 @@ int main(){
        return 1;
    }
 
+  
    return 0;
 }
 
@@ -106,6 +122,7 @@ void *connection_handler(void* parametri)
 
     struct nodoUtenti* lista=myParametri->lista;
     FILE*fp=myParametri->file;
+
 
     int size = 1024;
     char buff[size];
@@ -131,33 +148,22 @@ void *connection_handler(void* parametri)
                 printf("Server Exit...\n");
                 break;
             }
-            //TEST
-            char message[10]="ciao\n";
-             if(send(newSocket , message, strlen(message) , 0) < 0)
-             {
-                puts("Send failed");
-                return 1;
-            }
-        
+           
             if (strncmp("register", buff, 8 ) == 0){
 		    pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             if(registraUtente(buff, lista, fp)==1){
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "register_success\n\n");
-                printf(str);
-                printf("dopo reply");
-               // write(newSocket, str, sizeof(str));
                 send(newSocket, str, strlen(str), 0);
+                printf("%s", str);
             } else{
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "register_fail");
                 strcat (str, "\n");
-                printf("%s", str);
-                printf("\ndopo reply\n");
                 send(newSocket, str, strlen(str), 0);
-                printf("dopo send\n");
+                printf("%s", str);
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
@@ -170,18 +176,15 @@ void *connection_handler(void* parametri)
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "login_success");
                 strcat (str, "\n");
-                printf(str);
-                printf("dopo reply");
                 send(newSocket, str, strlen(str), 0);
+                printf("%s", str);
             } else{
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "login_fail");
                 strcat (str, "\n");
-                printf("%s", str);
-                printf("\ndopo reply\n");
                 send(newSocket, str, strlen(str), 0);
-                printf("dopo send\n");
+                printf("%s", str);
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
@@ -197,10 +200,25 @@ void *connection_handler(void* parametri)
             }
             if (strncmp("estrazione", buff, 10) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            extractNumber(buff, lista, fp);
+            int numeroEstratto = extractNumber(buff, lista, fp);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
-
+              if (strncmp("latestnumber", buff, 12) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            int numeroLetto = latestNumber(fp);
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
+            if (strncmp("timeleft", buff, 8) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            int time_left = getTimerTimeLeft();
+            char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                strcpy (str, time_left);
+                strcat (str, "\n");
+                send(newSocket, str, strlen(str), 0);
+                printf("%s", str);
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
 
             bzero(buff, size);
            // n = 0;
@@ -220,13 +238,21 @@ void *connection_handler(void* parametri)
     return 0;
 }
 
-int extractNumber(char*data, struct nodoUtenti*lista, FILE*fp){
+int latestNumber(FILE*fp){
+    int numeroLetto=-1;
     fp=fopen("UltimoNumeroEstratto.txt", "w");
-    if(!fp) {perror("Errore apertura numero estratto"); exit(-1);}
+    if(!fp) {perror("Errore apertura ultimo numero \n"); exit(-1);}
+    fscanf(fp, "%d", &numeroLetto);
+    return numeroLetto;
+
+}
+
+int extractNumber(char*data, struct nodoUtenti*lista, FILE*fp){
     int randomNumber=rand() &36;
      fprintf(fp, "%d\n", randomNumber);
      printf("\nNumero estratto: %d \n", randomNumber);
      fclose(fp);
+     return randomNumber;
 }
 
 int  betNumber(char* data, struct nodoUtenti* lista,FILE* fp){
@@ -244,7 +270,7 @@ part3[10]='\0';
 memmove(part4, &data[22], 10);
 part4[10]='\0';
 
-printf("BET: %s \t numero: %s \t nome: %s \t amount: %s", part1, part2, part3, part4);
+printf("BET: %s \t numero: %s \t nome: %s \t amount: %s \n", part1, part2, part3, part4);
 strtok(part1, "\n");
 strtok(part2, "\n");
 strtok(part3, "\n");
@@ -267,9 +293,10 @@ void remove_spaces(char* s) {
 
 int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*amount){
     while(lista){
-        if(strcmp(lista->nickname, nome)==0)
+        if(strcmp(lista->nickname, nome)==0){
         lista->numeroPuntato=numero;
         lista->gettoniPuntati=amount;
+        }
         inserisciScommessa(lista->next, numero, nome, amount);
     }
 }
@@ -304,7 +331,7 @@ part2[10] = '\0';
 memmove(part3, &data[20], 10);
 part3[10] = '\0';
 
-printf("%s - %s - %s \t", part1, part2, part3);
+printf("%s - %s - %s \t \n", part1, part2, part3);
 strtok(part1, "\n");
 strtok(part2, "\n");
 strtok(part3, "\n");
@@ -340,7 +367,7 @@ part2[10] = '\0';
 memmove(part3, &data[20], 10);
 part3[10] = '\0';
 
-printf("%s - %s - %s \t", part1, part2, part3);
+printf("%s - %s - %s \n", part1, part2, part3);
 strtok(part1, "\n");
 strtok(part2, "\n");
 strtok(part3, "\n");
@@ -363,4 +390,32 @@ int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
     return 0;
 }
 
+// Timer stuff
+//int gettimeofday(struct timeval *restrict tp, void *restrict tzp); The gettimeofday() function shall obtain the current time,
+// expressed as seconds and microseconds since the Epoch, and store it in the timeval structure pointed to by tp. 
+
+void* startTheTimer(){
+    printf("\n Timer inizializzato! \n");
+
+    struct timeval *restrict time=(struct timeval*)malloc(sizeof(struct timeval));
+    gettimeofday(time, NULL); //inizia il countdown
+    printf("\n %d <-time \n", time->tv_sec);
+    start_time=time->tv_sec;
+
+    //in un thread
+    while(1){
+        gettimeofday(time, NULL);
+        current_time=time->tv_sec;
+        if (current_time-start_time == bet_time)
+        startTheTimer();
+    }
+   
+}
+
+int getTimerTimeLeft(){
+    struct timeval *restrict time=(struct timeval*)malloc(sizeof(struct timeval));
+    gettimeofday(time, NULL);
+    current_time = time->tv_sec;
+    return (bet_time - current_time-start_time);
+}
 

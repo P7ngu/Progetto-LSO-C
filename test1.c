@@ -123,7 +123,7 @@ bool contains (struct nodoUtenti* lista, char*data)
 {
     if(!lista) return false;
     if(strcmp(lista->nickname, data)==0) return true;
-    else return (contains(lista->next, numero));
+    else return (contains(lista->next, data));
 }
 
 void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
