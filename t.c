@@ -14,7 +14,7 @@
 #define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
-int bet_time=300; //5 minuti tra due bet
+int bet_time=20; //5 minuti tra due bet
 long int start_time;
 long int current_time;
 
@@ -29,8 +29,6 @@ int main(){
     perror("Error while creating timer thread");
         return 1;
    }
-
-
 
       FILE *fp;
     struct nodoUtenti* lista=NULL;
@@ -200,20 +198,38 @@ void *connection_handler(void* parametri)
             }
             if (strncmp("estrazione", buff, 10) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            int numeroEstratto = extractNumber(buff, lista, fp);
+            int numeroEstratto = extractNumber();
+             char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                //strcpy (str, time_left);
+                sprintf(str, "%d", numeroEstratto);
+                strcat (str, "\n");
+                send(newSocket, str, strlen(str), 0);
+                printf("%s", str);
+                aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
               if (strncmp("latestnumber", buff, 12) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            int numeroLetto = latestNumber(fp);
+            printf("Richiesta ultimo numero \n");
+            int numeroLetto = readLatestNumber();
+            char *str;
+                str = malloc (sizeof (char) * MAX_SIZE);
+                //strcpy (str, time_left);
+                sprintf(str, "%d", numeroLetto);
+                strcat (str, "\n");
+                send(newSocket, str, strlen(str), 0);
+                printf("%s", str);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
             if (strncmp("timeleft", buff, 8) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             int time_left = getTimerTimeLeft();
+            printf("Chiamato metodo %d \n", time_left);
             char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
-                strcpy (str, time_left);
+                //strcpy (str, time_left);
+                sprintf(str, "%d", time_left);
                 strcat (str, "\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
@@ -238,17 +254,47 @@ void *connection_handler(void* parametri)
     return 0;
 }
 
-int latestNumber(FILE*fp){
-    int numeroLetto=-1;
-    fp=fopen("UltimoNumeroEstratto.txt", "w");
+aggiornaFileUtenteDopoBet(struct nodoUtenti* lista){
+FILE*fp = fopen("Utenti.txt", "w");
+if(!fp) {perror("Errore apertura aggiorna file utente dopo bet \n"); exit(-1);}
+ScriviFile(lista, fp);
+fclose(fp);
+
+}
+
+aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
+    struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    tmp = lista; //salvo la testa
+    int lung=LunghezzaLista(lista);
+    for(int i=0; i<lung; i++){  
+    if(lista->numeroPuntato == numero){
+    //Aggiornare i crediti
+    lista->numeroPuntato=-1;
+    lista->gettoni=(lista->gettoniPuntati)*30;
+    lista->gettoniPuntati=0;
+    }else {
+    lista->numeroPuntato=-1;
+    lista->gettoniPuntati=0;
+        }
+    }
+    aggiornaFileUtenteDopoBet(tmp);  
+}
+
+int readLatestNumber(int numeroLetto){
+    FILE*fp=fopen("UltimoNumeroEstratto.txt", "w");
     if(!fp) {perror("Errore apertura ultimo numero \n"); exit(-1);}
     fscanf(fp, "%d", &numeroLetto);
+    fclose(fp);
     return numeroLetto;
 
 }
 
-int extractNumber(char*data, struct nodoUtenti*lista, FILE*fp){
+
+int extractNumber(){
     int randomNumber=rand() &36;
+    readLatestNumber(randomNumber);
+    FILE*fp=fopen("UltimoNumeroEstratto.txt", "w");
+     if(!fp) {perror("Errore apertura estrazione numero \n"); exit(-1);}
      fprintf(fp, "%d\n", randomNumber);
      printf("\nNumero estratto: %d \n", randomNumber);
      fclose(fp);
@@ -277,6 +323,9 @@ strtok(part3, "\n");
 strtok(part4, "\n");
 
 //aggiorno file log
+ printf("\nPrima ins scomm\n");
+StampaLista(lista);
+
 inserisciScommessa(lista, part2, part3, part4);
 
 }
@@ -293,9 +342,13 @@ void remove_spaces(char* s) {
 
 int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*amount){
     while(lista){
+        //TODO FIX CHAR E INT
         if(strcmp(lista->nickname, nome)==0){
         lista->numeroPuntato=numero;
         lista->gettoniPuntati=amount;
+        lista->gettoni= (lista->gettoni)-(lista->gettoniPuntati);
+        printf("\nDentro ins scomm\n");
+        StampaLista(lista);
         }
         inserisciScommessa(lista->next, numero, nome, amount);
     }
@@ -340,8 +393,9 @@ remove_spaces(part2);
 remove_spaces(part1);
 
 if(contains(lista, part2)) return 0;
-
+printf("Prima inserimento in coda \n");
 lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
+printf("Dopo inserimento in coda \n");
 //lista = InserisciCoda(part2, part3, GETTONI_INIZIALI, true, -1, lista);
 fp=fopen("Utenti.txt", "w");
  if(!fp) {perror("ERRORE\n"); exit(0);}
@@ -406,8 +460,11 @@ void* startTheTimer(){
     while(1){
         gettimeofday(time, NULL);
         current_time=time->tv_sec;
-        if (current_time-start_time == bet_time)
+        if (current_time-start_time == bet_time){
+        //extractNumber();
         startTheTimer();
+        
+        }
     }
    
 }
@@ -416,6 +473,6 @@ int getTimerTimeLeft(){
     struct timeval *restrict time=(struct timeval*)malloc(sizeof(struct timeval));
     gettimeofday(time, NULL);
     current_time = time->tv_sec;
-    return (bet_time - current_time-start_time);
+    return (bet_time - (current_time-start_time));
 }
 

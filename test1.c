@@ -13,7 +13,6 @@
 //Notifica risultati: server -> app android
 //int_operazione ### dati ###
 
-//TIMER IN JAVA IL CLIENT DICE AL SERVER QUANDO ESTRARRE?
 
 #include <stdio.h>
 #include <stdlib.h>
