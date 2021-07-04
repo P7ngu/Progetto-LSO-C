@@ -17,11 +17,14 @@ pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER;
 int bet_time=20; //5 minuti tra due bet
 long int start_time;
 long int current_time;
+char utentiOnline[MAX_SIZE];
 
 void *connection_handler(void*socket_desc);
 void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
-char checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
+char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
+
+//FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI
 
 int main(){
 
@@ -119,7 +122,7 @@ void *connection_handler(void* parametri)
     struct param_thread* myParametri = ((struct param_thread*)parametri);
     int newSocket = *(int*)myParametri->sock;
 
-    struct nodoUtenti* lista=myParametri->lista;
+    struct nodoUtenti* lista = myParametri->lista;
     FILE*fp=myParametri->file;
 
 
@@ -189,16 +192,23 @@ void *connection_handler(void* parametri)
             }
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
-            if (strncmp("online", buff, 8) == 0){
+
+            if (strncmp("online", buff, 6) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            char onlineUsers[4000];
-            strcpy(onlineUsers, checkUtentiOnline(buff, lista, fp));
-            strcat(onlineUsers, "\n");
-            send(newSocket, onlineUsers, strlen(onlineUsers), 0);
-            printf("%s", onlineUsers);
+            char onlineUsers[MAX_SIZE];
+
+            char* str;
+            str=malloc(sizeof(char)*MAX_SIZE);
+            *str = checkUtentiOnline(buff, lista, fp);
+            strcat(utentiOnline, "\n");
+           
+            send(newSocket, utentiOnline, strlen(utentiOnline), 0);
+            printf("\ndopo send online\n");
+            printf("\n lista utenti online: %s", utentiOnline);
             //send
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
+
             if (strncmp("puntata", buff, 7) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             betNumber(buff, lista, fp);
@@ -215,7 +225,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
-                aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
+                //aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
               if (strncmp("latestnumber", buff, 12) == 0){
@@ -335,7 +345,11 @@ strtok(part4, "\n");
  printf("\nPrima ins scomm\n");
 StampaLista(lista);
 
+remove_spaces(part3);
 inserisciScommessa(lista, part2, part3, part4);
+
+printf("Lista dopo bet\n");
+StampaLista(lista);
 
 }
 
@@ -350,35 +364,37 @@ void remove_spaces(char* s) {
 
 
 int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*amount){
-    while(lista){
+    if(lista){
+        printf("Dentro ins Scomm fuori if2\n");
         //TODO FIX CHAR E INT
         if(strcmp(lista->nickname, nome)==0){
-        lista->numeroPuntato=numero;
-        lista->gettoniPuntati=amount;
-        lista->gettoni= (lista->gettoni)-(lista->gettoniPuntati);
-        printf("\nDentro ins scomm\n");
-        StampaLista(lista);
+        int numeroI = atoi(numero);
+        int amountI = atoi(amount);
+
+        lista->numeroPuntato=numeroI;
+        lista->gettoniPuntati=amountI;
+        lista->gettoni=(lista->gettoni)-(lista->gettoniPuntati); //AGGIUNGERE CHECK GETTONI PUNTATI
         }
-        inserisciScommessa(lista->next, numero, nome, amount);
+       else inserisciScommessa(lista->next, numero, nome, amount);
     }
+    aggiornaFileUtenteDopoBet(lista);
+    printf("\nFine ins scomm\n");
+        StampaLista(lista);
 }
 
-char checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
-      fp=fopen("Utenti.txt", "r");
-    if(!fp) {perror("ERRORE\n"); exit(0);}
-    lista=LeggiFile(lista, fp);
-    char listaOnline[4000];
+char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
+    char listaOnline[MAX_SIZE];
     int len=LunghezzaLista(lista);
 
     for(int i=0; i<len; i++){
         if(lista->isOnline == 1){
-        strcat (listaOnline, lista->nickname);
-        strcat(listaOnline, "$$$");
+        strcat (utentiOnline, lista->nickname);
+        strcat(utentiOnline, "$$$");
         }
         lista=lista->next;
     }
-    fclose(fp);
-    return listaOnline; //o inviare il messaggio direttamente
+    printf("\n Dentro check, utenti online: %s \n", utentiOnline);
+    return utentiOnline; //o inviare il messaggio direttamente
 }
 
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp){
@@ -421,7 +437,7 @@ return 1;
 int accessoUtente(char* data, struct nodoUtenti* lista, FILE*fp){
     fp=fopen("Utenti.txt", "r");
     if(!fp) {perror("ERRORE\n"); exit(0);}
-lista=LeggiFile(lista, fp);
+//lista=LeggiFile(lista, fp);
 fclose(fp);
 char part1[11];
 char part2[11];
@@ -448,7 +464,7 @@ else return 0;
 }
 
 int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
-    while(lista){
+    if(lista){
         if(  (strcmp(nome, lista->nickname) ==0) && (strcmp(password, lista->password) ==0)  ){
             lista->isOnline=1;
         return 1;
