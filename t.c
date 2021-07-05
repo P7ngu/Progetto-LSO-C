@@ -225,7 +225,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
-                //aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
+                if(lista) aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
               if (strncmp("latestnumber", buff, 12) == 0){
@@ -284,19 +284,22 @@ fclose(fp);
 aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     tmp = lista; //salvo la testa
+    tmp->next=lista->next;
     int lung=LunghezzaLista(lista);
     for(int i=0; i<lung; i++){  
     if(lista->numeroPuntato == numero){
     //Aggiornare i crediti
     lista->numeroPuntato=-1;
-    lista->gettoni=(lista->gettoniPuntati)*30;
+    lista->gettoni=lista->gettoni + (lista->gettoniPuntati)*30;
     lista->gettoniPuntati=0;
+    lista=lista->next;
     }else {
     lista->numeroPuntato=-1;
     lista->gettoniPuntati=0;
+    lista=lista->next;
         }
     }
-    aggiornaFileUtenteDopoBet(tmp);  
+    aggiornaFileUtenteDopoBet(lista);  
 }
 
 int readLatestNumber(int numeroLetto){
