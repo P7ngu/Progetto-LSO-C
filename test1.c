@@ -42,6 +42,7 @@ struct param_thread{
     char param4[MAX_PARAM];
 };
 
+
 struct param_thread* CreaParametriThread(int* sock, FILE* file, char* p0, char*p1, char*p2, char*p3, char*p4, struct nodoUtenti* lista){
     struct param_thread* nuovoParametro=(struct param_thread*)malloc(sizeof(struct param_thread));
     if(!nuovoParametro) return NULL;
@@ -145,6 +146,16 @@ void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
  for(int i = 0; i < n; i++){
     fprintf(fp, "%s %s %d %d %d %d \n", temp[i]->nickname, temp[i]->password, temp[i]->gettoni, temp[i]->isOnline, temp[i]->numeroPuntato, temp[i]->gettoniPuntati);
   }
+}
+
+resettaPuntatePrecedenti(struct nodoUtenti* lista){
+    int lunghezzaLista=LunghezzaLista(lista);
+    for(int i=0; i<lunghezzaLista; i++){
+        lista->numeroPuntato=-1;
+        lista->gettoniPuntati=0;
+        lista=lista->next;
+        lista->isOnline=0;
+    }
 }
 
 /*/

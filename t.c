@@ -42,6 +42,8 @@ int main(){
     lista=LeggiFile(lista, fp);
     fclose(fp);
 
+    //if(lista) resettaPuntatePrecedenti(lista);
+
     printf("Lista utenti: \n");
     StampaLista(lista);
 
@@ -114,6 +116,8 @@ int main(){
   
    return 0;
 }
+
+
 
 
 void *connection_handler(void* parametri)
@@ -282,6 +286,8 @@ fclose(fp);
 }
 
 aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
+    printf("\n Lista prima aggiornamento ");
+    StampaLista(lista);
     struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     tmp = lista; //salvo la testa
     tmp->next=lista->next;
@@ -299,6 +305,10 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     lista=lista->next;
         }
     }
+    printf("\nLista dopo aggiornamento ");
+    lista=tmp;
+    lista->next=tmp->next;
+    StampaLista(tmp);
     aggiornaFileUtenteDopoBet(lista);  
 }
 
@@ -423,7 +433,10 @@ remove_spaces(part3);
 remove_spaces(part2);
 remove_spaces(part1);
 
-if(contains(lista, part2)) return 0;
+if(contains(lista, part2)){
+    printf("Username già esistente \n");
+return 0;
+} 
 printf("Prima inserimento in coda \n");
 lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
 printf("Dopo inserimento in coda \n");
@@ -438,10 +451,10 @@ return 1;
 }
 
 int accessoUtente(char* data, struct nodoUtenti* lista, FILE*fp){
-    fp=fopen("Utenti.txt", "r");
-    if(!fp) {perror("ERRORE\n"); exit(0);}
+    //fp=fopen("Utenti.txt", "r");
+    //if(!fp) {perror("ERRORE\n"); exit(0);}
 //lista=LeggiFile(lista, fp);
-fclose(fp);
+//fclose(fp);
 char part1[11];
 char part2[11];
 char part3[11];
@@ -467,12 +480,12 @@ else return 0;
 }
 
 int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
-    if(lista){
+    if(lista){ printf("DEBUG \t dddddddddd");
         if(  (strcmp(nome, lista->nickname) ==0) && (strcmp(password, lista->password) ==0)  ){
             lista->isOnline=1;
         return 1;
         }
-        else accessoUtente_server(nome, password, lista->next);
+        else return accessoUtente_server(nome, password, lista->next);
     }
     return 0;
 }
