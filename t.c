@@ -313,7 +313,7 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
 }
 
 int readLatestNumber(int numeroLetto){
-    FILE*fp=fopen("UltimoNumeroEstratto.txt", "w");
+    FILE*fp=fopen("UltimoNumeroEstratto.txt", "r");
     if(!fp) {perror("Errore apertura ultimo numero \n"); exit(-1);}
     fscanf(fp, "%d", &numeroLetto);
     fclose(fp);
