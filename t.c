@@ -402,7 +402,12 @@ char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
     for(int i=0; i<len; i++){
         if(lista->isOnline == 1){
         strcat (utentiOnline, lista->nickname);
-        strcat(utentiOnline, "$$$");
+        strcat(utentiOnline, ",,");
+         int gettoni = lista->gettoni;
+            char str[20];
+        sprintf(str, "%d", gettoni);
+        strcat(utentiOnline, str);
+        strcat(utentiOnline, ",,");
         }
         lista=lista->next;
     }
