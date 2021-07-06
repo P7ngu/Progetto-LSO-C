@@ -480,7 +480,7 @@ else return 0;
 }
 
 int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
-    if(lista){ printf("DEBUG \t dddddddddd");
+    if(lista){ 
         if(  (strcmp(nome, lista->nickname) ==0) && (strcmp(password, lista->password) ==0)  ){
             lista->isOnline=1;
         return 1;
