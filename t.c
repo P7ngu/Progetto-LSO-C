@@ -14,7 +14,7 @@
 #define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
-int bet_time=20; //5 minuti tra due bet
+int bet_time=45; //5 minuti tra due bet
 long int start_time;
 long int current_time;
 char utentiOnline[MAX_SIZE];
