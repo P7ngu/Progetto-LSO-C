@@ -24,7 +24,7 @@ void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
 
-//FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI
+//FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI fatto
 
 int main(){
 
@@ -36,16 +36,18 @@ int main(){
 
       FILE *fp;
     struct nodoUtenti* lista=NULL;
+    struct nodoUtenti* copiaLista=NULL;
     fp=fopen("Utenti.txt", "r");
     if(!fp) {perror("ERRORE\n"); exit(0);}
 
     lista=LeggiFile(lista, fp);
     fclose(fp);
 
-    //if(lista) resettaPuntatePrecedenti(lista);
+    if(lista) copiaLista = resettaPuntatePrecedenti(lista);
 
-    printf("Lista utenti: \n");
+    printf("\nLista utenti: \n");
     StampaLista(lista);
+    printf("\ndiwjdiwjdiwejdw");
 
     int socketfd, ret;
     struct sockaddr_in serverAddr;

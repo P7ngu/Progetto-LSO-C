@@ -148,14 +148,32 @@ void StampaListaToFileInOrdine(struct nodoUtenti *lista, FILE *fp)
   }
 }
 
-resettaPuntatePrecedenti(struct nodoUtenti* lista){
+struct nodoUtenti* resettaPuntatePrecedenti(struct nodoUtenti* lista){
     int lunghezzaLista=LunghezzaLista(lista);
-    for(int i=0; i<lunghezzaLista; i++){
-        lista->numeroPuntato=-1;
-        lista->gettoniPuntati=0;
-        lista=lista->next;
-        lista->isOnline=0;
+    int n=LunghezzaLista;
+
+    struct nodoUtenti** temp, *copia;
+    temp=(struct nodoUtenti**)malloc(sizeof(struct nodoUtenti*));
+
+     for(int i=0; i<LunghezzaLista; i++, lista=lista->next){
+      if(lista) temp[i]=lista;
+      else break;
+      printf("\n 1 \n %s %s\n", temp[i]->nickname, lista->nickname);
     }
+
+
+    for(int i=0; i<lunghezzaLista; i++){
+        if(temp[i]!=NULL){
+        temp[i]->numeroPuntato=-1;
+        printf("\n2 %s %s\n", temp[i], lista);
+        temp[i]->gettoniPuntati=0;
+        printf(" 3 %s %s\n", temp[i], lista);
+        temp[i]->isOnline=0;
+        printf("4 %s %s \n", temp[i], lista);
+    }
+        
+    }
+    if(temp[0]) return temp[0];
 }
 
 /*/
