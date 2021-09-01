@@ -23,6 +23,7 @@ void *connection_handler(void*socket_desc);
 void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
+char* checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
 
 //FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI fatto
 
@@ -215,6 +216,22 @@ void *connection_handler(void* parametri)
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
+            if (strncmp("listautenti", buff, 11) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            char onlineUsers[MAX_SIZE];
+
+            char* str;
+            str=malloc(sizeof(char)*MAX_SIZE);
+            *str = checkListaUtenti(buff, lista, fp);
+            strcat(utentiOnline, "\n");
+           
+            send(newSocket, utentiOnline, strlen(utentiOnline), 0);
+            printf("\ndopo send lista utenti\n");
+            printf("\n lista utenti : %s", utentiOnline);
+            //send
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
+
             if (strncmp("puntata", buff, 7) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             betNumber(buff, lista, fp);
@@ -296,9 +313,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     int lung=LunghezzaLista(lista);
     for(int i=0; i<lung; i++){  
     if(lista->numeroPuntato == numero){
+        printf("\n Match, vittoria \n");
     //Aggiornare i crediti
     lista->numeroPuntato=-1;
-    lista->gettoni=lista->gettoni + (lista->gettoniPuntati)*30;
+    //Vincita
+    lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
     lista->gettoniPuntati=0;
     lista=lista->next;
     }else {
@@ -414,6 +433,24 @@ char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
         lista=lista->next;
     }
     printf("\n Dentro check, utenti online: %s \n", utentiOnline);
+    return utentiOnline; //o inviare il messaggio direttamente
+}
+
+char* checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
+    char listaOnline[MAX_SIZE];
+    int len=LunghezzaLista(lista);
+    for(int i=0; i<len; i++){
+        strcat (utentiOnline, lista->nickname);
+        strcat(utentiOnline, ";;");
+         int gettoni = lista->gettoni;
+            char str[20];
+        sprintf(str, "%d", gettoni);
+        strcat(utentiOnline, str);
+        strcat(utentiOnline, ";;");
+    
+        lista=lista->next;
+    }
+    printf("\n Dentro check, utenti lista: %s \n", utentiOnline);
     return utentiOnline; //o inviare il messaggio direttamente
 }
 
