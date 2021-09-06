@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include<pthread.h> 
+#include <stdbool.h> 
 #include <time.h>
 #include "test1.c"
 #define MAX_CHAR 100
@@ -24,6 +25,8 @@ void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
+bool isNumeroRosso(int numero);
+bool isNumeroNero(int numero);
 
 //FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI fatto
 
@@ -320,17 +323,168 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
     lista->gettoniPuntati=0;
     lista=lista->next;
-    }else {
+    }else if(lista->numeroPuntato < 37) { //Sconfitta
     lista->numeroPuntato=-1;
     lista->gettoniPuntati=0;
     lista=lista->next;
         }
-    }
+        else{// Bet speciale
+        if(lista->numeroPuntato==37){//Rossi
+        if(isNumeroRosso(numero)){ //Vinto
+        //Aggiornare i crediti
+        lista->numeroPuntato=-1;
+        //Vincita
+        lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+        lista->gettoniPuntati=0;
+        lista=lista->next;
+        } else { //Perso, non è uscito un rosso
+            lista->numeroPuntato=-1;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+        }
+        }//Fine check Rossi
+
+        if(lista->numeroPuntato==38){ //Neri
+        if(isNumeroNero(numero)){ //Vittoria
+        lista->numeroPuntato=-1;
+        lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+        lista->gettoniPuntati=0;
+        lista=lista->next;
+        } else { //Perso, non è uscito un nero
+            lista->numeroPuntato=-1;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+        }
+        } //Fine check neri
+
+        if(lista->numeroPuntato==39){
+            if(numero%2 != 0){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check dispari
+
+        if(lista->numeroPuntato==40){
+            if(numero%2 == 0){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check pari
+
+        if(lista->numeroPuntato==41){
+            if(numero < 19){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check bassi
+
+           if(lista->numeroPuntato==42){
+            if(numero > 18){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check alti
+
+         if(lista->numeroPuntato==43){
+            if(numero < 13){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check 1°colonna
+
+         if(lista->numeroPuntato==44){
+            if(12 < numero < 25){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check 2°colonna
+
+        if(lista->numeroPuntato==45){
+            if(24 < numero < 37){
+            lista->numeroPuntato=-1;
+            lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
+            lista->gettoniPuntati=0;
+            lista=lista->next;
+            } else {
+                 lista->numeroPuntato=-1;
+                lista->gettoniPuntati=0;
+                lista=lista->next;
+
+            }
+        } //Fine check 3°colonna
+        
+        
+        }//Fine bet speciali
+
+
+        }//Fine scorrimento lista
+
     printf("\nLista dopo aggiornamento ");
     lista=tmp;
     lista->next=tmp->next;
     StampaLista(tmp);
     aggiornaFileUtenteDopoBet(lista);  
+}
+
+//Check numeri
+bool isNumeroRosso(int input){
+int rossi[18] = {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36};
+for(int i = 0; i<18; i++){
+if(rossi[i]==input){
+printf("\n NUMERO ROSSO\n");
+return true;
+}
+}
+return false;
+}
+
+bool isNumeroNero(int numeroDaControllare){
+    if( isNumeroRosso(numeroDaControllare) || numeroDaControllare==0 || numeroDaControllare>36 ) return false;
+    printf("\n NUMERO NERO\n");
+    return true;
 }
 
 int readLatestNumber(int numeroLetto){
