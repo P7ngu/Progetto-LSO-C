@@ -162,8 +162,12 @@ void *connection_handler(void* parametri)
             }
            
             if (strncmp("register", buff, 8 ) == 0){
+                 printf("Sto stampando prima del register \n riga 165: \n");
+                StampaLista(lista);
 		    pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            if(registraUtente(buff, lista, fp)==1){
+            if( registraUtente(buff, lista, fp)==1){
+                printf("Sto stampando nel register \n riga 169: \n");
+                StampaLista(lista);
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "register_success\n\n");
@@ -181,6 +185,8 @@ void *connection_handler(void* parametri)
             }
 
             if (strncmp("login", buff, 5) == 0){
+                 printf("Sto stampando nel login \n riga 188:");
+                StampaLista(lista);
                 //log in corso
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             if(accessoUtente(buff, lista, fp)==1){
@@ -329,6 +335,7 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     lista=lista->next;
         }
         else{// Bet speciale
+        
         if(lista->numeroPuntato==37){//Rossi
         if(isNumeroRosso(numero)){ //Vinto
         //Aggiornare i crediti
@@ -636,7 +643,7 @@ if(contains(lista, part2)){
 return 0;
 } 
 printf("Prima inserimento in coda \n");
-lista=InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
+lista = InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
 printf("Dopo inserimento in coda \n");
 //lista = InserisciCoda(part2, part3, GETTONI_INIZIALI, true, -1, lista);
 fp=fopen("Utenti.txt", "w");
