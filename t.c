@@ -15,16 +15,18 @@
 #define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
+
 int bet_time=45; //5 minuti tra due bet
 long int start_time;
 long int current_time;
 char utentiOnline[MAX_SIZE];
+char listaUtentiExt[MAX_SIZE];
 
 void *connection_handler(void*socket_desc);
 void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
-char* checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
+void checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
 bool isNumeroRosso(int numero);
 bool isNumeroNero(int numero);
 
@@ -95,7 +97,7 @@ int main(){
 
    while( (newSocket = accept(socketfd, (struct sockaddr*)&newAddr, &addr_size) )){
     if( newSocket < 0){
-        printf("No socket\n");
+        printf("No socket: %d\n", newSocket);
         exit(1);
     }
     else puts("Connection accepted");
@@ -134,6 +136,8 @@ void *connection_handler(void* parametri)
 
     struct nodoUtenti* lista = myParametri->lista;
     FILE*fp=myParametri->file;
+    struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    tmp = lista; //salvo la testa
 
 
     int size = 1024;
@@ -209,7 +213,24 @@ void *connection_handler(void* parametri)
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
-            if (strncmp("online", buff, 6) == 0){
+            if (strncmp("listautenti", buff, 11) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            char listaUtenti[MAX_SIZE*3];
+
+            char* str;
+            str=malloc(sizeof(char)*MAX_SIZE);
+             checkListaUtenti(buff, lista, fp);
+            //strcat(listaUtenti, str);
+            strcat(listaUtentiExt, "\n");
+           
+            send(newSocket, listaUtentiExt, strlen(listaUtentiExt), 0);
+            printf("\ndopo send lista utenti\n");
+            printf("\n lista utenti : %s", listaUtentiExt);
+            //send
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
+
+               if (strncmp("online", buff, 6) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             char onlineUsers[MAX_SIZE];
 
@@ -225,21 +246,7 @@ void *connection_handler(void* parametri)
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
-            if (strncmp("listautenti", buff, 11) == 0){
-            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            char onlineUsers[MAX_SIZE];
-
-            char* str;
-            str=malloc(sizeof(char)*MAX_SIZE);
-            *str = checkListaUtenti(buff, lista, fp);
-            strcat(utentiOnline, "\n");
            
-            send(newSocket, utentiOnline, strlen(utentiOnline), 0);
-            printf("\ndopo send lista utenti\n");
-            printf("\n lista utenti : %s", utentiOnline);
-            //send
-            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
-            }
 
             if (strncmp("puntata", buff, 7) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
@@ -559,6 +566,8 @@ void remove_spaces(char* s) {
 
 
 int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*amount){
+    struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    tmp = lista; //salvo la testa
     if(lista){
         printf("Dentro ins Scomm fuori if2\n");
         //TODO FIX CHAR E INT
@@ -574,12 +583,14 @@ int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*a
     }
     aggiornaFileUtenteDopoBet(lista);
     printf("\nFine ins scomm\n");
+   // lista=tmp;
         StampaLista(lista);
 }
 
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
     char listaOnline[MAX_SIZE];
     int len=LunghezzaLista(lista);
+   
 
     for(int i=0; i<len; i++){
         if(lista->isOnline == 1){
@@ -597,25 +608,36 @@ char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
     return utentiOnline; //o inviare il messaggio direttamente
 }
 
-char* checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
-    char listaOnline[MAX_SIZE];
-    int len=LunghezzaLista(lista);
+void checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
+
+    fp=fopen("Utenti.txt", "r");
+    if(!fp) {perror("ERRORE\n"); exit(0);}
+    struct nodoUtenti* tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    tmp=LeggiFile(tmp, fp);
+    StampaLista(tmp);
+    strcpy(listaUtentiExt, "");
+
+    int len=LunghezzaLista(tmp);
     for(int i=0; i<len; i++){
-        strcat (utentiOnline, lista->nickname);
-        strcat(utentiOnline, ";;");
-         int gettoni = lista->gettoni;
+        int lunNome = strlen(tmp->nickname);
+        if(lunNome > 3){
+        strcat (listaUtentiExt, tmp->nickname);
+        strcat(listaUtentiExt, ";;");
+         int gettoni = tmp->gettoni;
             char str[20];
         sprintf(str, "%d", gettoni);
-        strcat(utentiOnline, str);
-        strcat(utentiOnline, ";;");
-    
-        lista=lista->next;
+        strcat(listaUtentiExt, str);
+        strcat(listaUtentiExt, ";;");
+        }
+        tmp=tmp->next;
     }
-    printf("\n Dentro check, utenti lista: %s \n", utentiOnline);
-    return utentiOnline; //o inviare il messaggio direttamente
+    printf("\n Dentro check, utenti lista: %s \n", listaUtentiExt);
+    //return listaUtenti; //o inviare il messaggio direttamente
 }
 
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp){
+    //struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    //tmp = lista; //salvo la testa
     //register = 8 - 10
     //nomeUtente max 8, se <8 i successivi sono spazi -10
     //password max 10, se <10 i successivi sono spazi -10
@@ -649,6 +671,7 @@ printf("Dopo inserimento in coda \n");
 fp=fopen("Utenti.txt", "w");
  if(!fp) {perror("ERRORE\n"); exit(0);}
 StampaListaToFileInOrdine(lista, fp);
+
 StampaLista(lista);
 fclose(fp);
 return 1;
