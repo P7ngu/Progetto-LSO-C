@@ -261,7 +261,7 @@ void *connection_handler(void* parametri)
                 str = malloc (sizeof (char) * MAX_SIZE);
                 //strcpy (str, time_left);
                 sprintf(str, "%d", numeroEstratto);
-                strcat (str, "\n");
+                strcat (str, "**\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
                 if(lista) aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
@@ -275,7 +275,7 @@ void *connection_handler(void* parametri)
                 str = malloc (sizeof (char) * MAX_SIZE);
                 //strcpy (str, time_left);
                 sprintf(str, "%d", numeroLetto);
-                strcat (str, "\n");
+                strcat (str, "--\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
