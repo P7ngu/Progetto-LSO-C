@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -29,6 +30,7 @@ char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
 void checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
 bool isNumeroRosso(int numero);
 bool isNumeroNero(int numero);
+logoutUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 
 //FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI fatto
 
@@ -97,6 +99,7 @@ int main(){
 
    while( (newSocket = accept(socketfd, (struct sockaddr*)&newAddr, &addr_size) )){
     if( newSocket < 0){
+        fprintf(stderr, "socket() failed: %s\n", strerror(errno));
         printf("No socket: %d\n", newSocket);
         exit(1);
     }
@@ -254,6 +257,13 @@ void *connection_handler(void* parametri)
             printf("E' arrivata una bet\n");
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
+             if (strncmp("logout", buff, 6) == 0){
+            pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
+            logoutUtente(buff, lista, fp);
+            send(newSocket, buff, strlen(buff), 0);
+            printf("E' arrivata un logout per %s\n", buff);
+            pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
+            }
             if (strncmp("estrazione", buff, 10) == 0){
             pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
             int numeroEstratto = extractNumber();
@@ -311,6 +321,27 @@ void *connection_handler(void* parametri)
 
     return 0;
 }
+
+ logoutUtente(char* data, struct nodoUtenti* lista, FILE*fp)
+ {
+    char part1[7];
+    char nomeDaSloggare[10];
+
+//memmove(part1, &data[0], 6);
+//part1[7] = '\0';
+//memmove(nomeDaSloggare, &data[7], 10);
+//nomeDaSloggare[11] = '\0';
+//TODO QUI 
+
+//printf("LOGOUT  nome: %s \n", nomeDaSloggare);
+//strtok(part1, "\n");
+
+//strtok(nomeDaSloggare, "\n");
+//remove_spaces(nomeDaSloggare);
+
+ logOutUser(lista, nomeDaSloggare);
+ }
+
 
 aggiornaFileUtenteDopoBet(struct nodoUtenti* lista){
 FILE*fp = fopen("Utenti.txt", "w");

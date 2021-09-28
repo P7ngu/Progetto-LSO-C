@@ -187,15 +187,13 @@ struct nodoUtenti* logOutUser(struct nodoUtenti* lista, char*nomeDaSloggare){
      for(int i=0; i<LunghezzaLista; i++, lista=lista->next){
       if(lista) temp[i]=lista;
       else break;
-      //printf("\n LOGOUT, lista : \n %s %s\n", temp[i]->nickname, lista->nickname);
+      printf("\n LOGOUT, lista : \n %s %s\n", temp[i]->nickname, lista->nickname);
     }
 
 
     for(int i=0; i<lunghezzaLista; i++){
         if(temp[i]!=NULL){
-             printf("\n LOGOUT in, lista : \n %s %s\n", temp[i]->nickname, nomeDaSloggare);
             if(strcmp(temp[i]->nickname, nomeDaSloggare)==0){
-                printf("\n LOGOUT match: \n %s %s\n", temp[i]->nickname, nomeDaSloggare);
                temp[i]->isOnline=0; 
             }
     }
