@@ -9,7 +9,7 @@
 #include<pthread.h> 
 #include <stdbool.h> 
 #include <time.h>
-#include "test1.c"
+#include "test2.c"
 #define MAX_CHAR 100
 #define PORT 18000
 #define MAX_SIZE 128

@@ -176,6 +176,31 @@ struct nodoUtenti* resettaPuntatePrecedenti(struct nodoUtenti* lista){
     if(temp[0]) return temp[0];
 }
 
+struct nodoUtenti* logOutUser(struct nodoUtenti* lista, char*nomeDaSloggare){
+    int lunghezzaLista=LunghezzaLista(lista);
+    int n=LunghezzaLista;
+
+    struct nodoUtenti** temp, *copia;
+    temp=(struct nodoUtenti**)malloc(sizeof(struct nodoUtenti*));
+
+     for(int i=0; i<LunghezzaLista; i++, lista=lista->next){
+      if(lista) temp[i]=lista;
+      else break;
+      printf("\n LOGOUT, lista : \n %s %s\n", temp[i]->nickname, lista->nickname);
+    }
+
+
+    for(int i=0; i<lunghezzaLista; i++){
+        if(temp[i]!=NULL){
+            if(strcmp(temp[i]->nickname, nomeDaSloggare)==0){
+               temp[i]->isOnline=0; 
+            }
+    }
+        
+    }
+    if(temp[0]) return temp[0];
+}
+
 /*/
 int main()
 {
