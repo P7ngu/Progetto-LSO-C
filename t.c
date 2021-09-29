@@ -11,6 +11,7 @@
 #include <stdbool.h> 
 #include <time.h>
 #include "test2.c"
+
 #define MAX_CHAR 100
 #define PORT 18000
 #define MAX_SIZE 128
@@ -341,6 +342,7 @@ strtok(nomeDaSloggare, "\n");
 remove_spaces(nomeDaSloggare);
 
  logOutUser(lista, nomeDaSloggare);
+ aggiornaFileUtenteDopoBet(lista);
  StampaLista(lista);
  }
 
