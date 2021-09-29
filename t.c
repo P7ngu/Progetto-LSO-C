@@ -324,22 +324,24 @@ void *connection_handler(void* parametri)
 
  logoutUtente(char* data, struct nodoUtenti* lista, FILE*fp)
  {
-    char part1[7];
-    char nomeDaSloggare[10];
+     StampaLista(lista);
+    char part1[7]; //11
+    char nomeDaSloggare[10]; //2
 
-//memmove(part1, &data[0], 6);
-//part1[7] = '\0';
-//memmove(nomeDaSloggare, &data[7], 10);
-//nomeDaSloggare[11] = '\0';
+memmove(part1, &data[0], 6); //0, 10
+part1[6] = '\0'; //10
+memmove(nomeDaSloggare, &data[6], 10); //10, 2
+nomeDaSloggare[10] = '\0'; //2
 //TODO QUI 
 
-//printf("LOGOUT  nome: %s \n", nomeDaSloggare);
-//strtok(part1, "\n");
+printf("LOGOUT  nome: %s \n", nomeDaSloggare);
+strtok(part1, "\n");
 
-//strtok(nomeDaSloggare, "\n");
-//remove_spaces(nomeDaSloggare);
+strtok(nomeDaSloggare, "\n");
+remove_spaces(nomeDaSloggare);
 
  logOutUser(lista, nomeDaSloggare);
+ StampaLista(lista);
  }
 
 
