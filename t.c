@@ -13,7 +13,7 @@
 #include "test2.c"
 
 #define MAX_CHAR 100
-#define PORT 18000
+#define PORTDEFAULT 18000
 #define MAX_SIZE 128
 pthread_mutex_t SEMAFORO = PTHREAD_MUTEX_INITIALIZER; 
 #define GETTONI_INIZIALI 1000000
@@ -23,7 +23,9 @@ long int start_time;
 long int current_time;
 char utentiOnline[MAX_SIZE];
 char listaUtentiExt[MAX_SIZE];
+FILE *currentFileServerLog;
 
+void scriviLogSuFile(char* message);
 void *connection_handler(void*socket_desc);
 void* startTheTimer();
 int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
@@ -33,9 +35,15 @@ bool isNumeroRosso(int numero);
 bool isNumeroNero(int numero);
 logoutUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 
+long int PORT;
+
 //FIX: ALLO START RESETTARE NUMEROPUNTATO E GETTONI PUNTATI fatto
 
-int main(){
+int main(int argc, char* argv[]){
+    if( argc == 2 ) {
+      printf("The argument supplied is %s\n", argv[1]);
+        PORT=atoi(argv[1]);
+   } else perror("Fornire una porta da riga di comando");
 
      pthread_t timer_thread;
    if( pthread_create(&timer_thread, NULL, startTheTimer, NULL) <0 ){
@@ -47,7 +55,12 @@ int main(){
     struct nodoUtenti* lista=NULL;
     struct nodoUtenti* copiaLista=NULL;
     fp=fopen("Utenti.txt", "r");
-    if(!fp) {perror("ERRORE\n"); exit(0);}
+    if(!fp) {perror("ERRORE FILE UTENTI\n"); exit(0);}
+
+    //currentFileServerLog = fopen("ServerLog.txt", "w");
+    //if(!currentFileServerLog){perror("Errore apertura file di log\n");}
+    scriviLogSuFile("FILE LOG APERTO \n");
+
 
     lista=LeggiFile(lista, fp);
     fclose(fp);
@@ -94,6 +107,7 @@ int main(){
 
     if(listen(socketfd, 10) == 0){
         printf("Listening...\n");
+        scriviLogSuFile("Bind effettuato, in ascolto...\n");
     }else{
         printf("Error in binding\n");
     }
@@ -105,6 +119,7 @@ int main(){
         exit(1);
     }
     else puts("Connection accepted");
+    scriviLogSuFile("Connessione accettata\n");
 
     pthread_t new_thread;
     new_sock=malloc(1);
@@ -118,6 +133,7 @@ int main(){
     }
     pthread_join(new_thread, NULL);
     puts("Handler assigned");
+    scriviLogSuFile("Handler assegnato\n");
    }
 
    if(newSocket < 0){
@@ -126,15 +142,24 @@ int main(){
    }
 
   
+   fclose(currentFileServerLog);
    return 0;
 }
 
-
+void scriviLogSuFile(char* message){
+     currentFileServerLog = fopen("ServerLog.txt", "a");
+    if(!currentFileServerLog){perror("Errore apertura file di log\n");}
+   // fseek (currentFileServerLog , 0 , SEEK_END );
+    fprintf(currentFileServerLog, "%s \n", message);
+     fclose(currentFileServerLog);
+    
+}
 
 
 void *connection_handler(void* parametri)
 {
     puts("Handler started");
+    scriviLogSuFile("Inizio connection_handler\n");
     struct param_thread* myParametri = ((struct param_thread*)parametri);
     int newSocket = *(int*)myParametri->sock;
 
@@ -162,6 +187,9 @@ void *connection_handler(void* parametri)
             break;
         } else {
             // print buffer which contains the client contents
+            scriviLogSuFile("Messaggio dal client:");
+            scriviLogSuFile(buff);
+            scriviLogSuFile("\n \n");
             printf("From client: %s\t To client : ", buff);
             // if msg contains "Exit" then server exit and chat ended.
             if (strncmp("exit", buff, 4) == 0) {
@@ -344,6 +372,7 @@ remove_spaces(nomeDaSloggare);
  logOutUser(lista, nomeDaSloggare);
  aggiornaFileUtenteDopoBet(lista);
  StampaLista(lista);
+ scriviLogSuFile("Logout completato\n");
  }
 
 
@@ -352,6 +381,8 @@ FILE*fp = fopen("Utenti.txt", "w");
 if(!fp) {perror("Errore apertura aggiorna file utente dopo bet \n"); exit(-1);}
 ScriviFile(lista, fp);
 fclose(fp);
+scriviLogSuFile("Aggiornamento file completato\n");
+
 
 }
 
@@ -516,6 +547,7 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     lista->next=tmp->next;
     StampaLista(tmp);
     aggiornaFileUtenteDopoBet(lista);  
+    scriviLogSuFile("Aggiornamento lista completato\n");
 }
 
 //Check numeri
@@ -524,6 +556,7 @@ int rossi[18] = {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 
 for(int i = 0; i<18; i++){
 if(rossi[i]==input){
 printf("\n NUMERO ROSSO\n");
+scriviLogSuFile("Il numero è rosso\n");
 return true;
 }
 }
@@ -533,6 +566,7 @@ return false;
 bool isNumeroNero(int numeroDaControllare){
     if( isNumeroRosso(numeroDaControllare) || numeroDaControllare==0 || numeroDaControllare>36 ) return false;
     printf("\n NUMERO NERO\n");
+    scriviLogSuFile("Il numero è nero\n");
     return true;
 }
 
@@ -554,6 +588,11 @@ int extractNumber(){
      fprintf(fp, "%d\n", randomNumber);
      printf("\nNumero estratto: %d \n", randomNumber);
      fclose(fp);
+     scriviLogSuFile("Il numero estratto è: ");
+     char str[3];
+    sprintf(str, "%d", randomNumber);
+     scriviLogSuFile(str);
+     scriviLogSuFile("\n");
      return randomNumber;
 }
 
@@ -587,6 +626,7 @@ inserisciScommessa(lista, part2, part3, part4);
 
 printf("Lista dopo bet\n");
 StampaLista(lista);
+scriviLogSuFile("Inserimento bet completato\n");
 
 }
 
@@ -640,6 +680,7 @@ char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
         lista=lista->next;
     }
     printf("\n Dentro check, utenti online: %s \n", utentiOnline);
+    scriviLogSuFile("Lista utenti online aggiornata\n");
     return utentiOnline; //o inviare il messaggio direttamente
 }
 
@@ -667,6 +708,7 @@ void checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
         tmp=tmp->next;
     }
     printf("\n Dentro check, utenti lista: %s \n", listaUtentiExt);
+    scriviLogSuFile("Lista utenti aggiornata\n");
     //return listaUtenti; //o inviare il messaggio direttamente
 }
 
@@ -709,6 +751,7 @@ StampaListaToFileInOrdine(lista, fp);
 
 StampaLista(lista);
 fclose(fp);
+scriviLogSuFile("Registrazione effettuata\n");
 return 1;
 
 }
@@ -736,8 +779,12 @@ remove_spaces(part3);
 remove_spaces(part2);
 remove_spaces(part1);
 
-if(accessoUtente_server(part2, part3, lista) ==1) return 1;
+if(accessoUtente_server(part2, part3, lista) ==1){
+    scriviLogSuFile("Login effettuato\n");
+return 1;
+} 
 else return 0;
+scriviLogSuFile("Login fallito\n");
 
 
 }
@@ -759,6 +806,7 @@ int accessoUtente_server(char* nome, char*password, struct nodoUtenti* lista){
 
 void* startTheTimer(){
     printf("\n Timer inizializzato! \n");
+    scriviLogSuFile("Timer inizializzato\n");
 
     struct timeval *restrict time=(struct timeval*)malloc(sizeof(struct timeval));
     gettimeofday(time, NULL); //inizia il countdown
@@ -772,6 +820,7 @@ void* startTheTimer(){
         if (current_time-start_time == bet_time){
         //extractNumber();
         startTheTimer();
+        
 
         
         }
