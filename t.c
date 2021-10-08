@@ -29,7 +29,7 @@ FILE *currentFileServerLog;
 void scriviLogSuFile(char* message);
 void *connection_handler(void*socket_desc);
 void* startTheTimer();
-int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
+struct nodoUtenti* registraUtente(char* data, struct nodoUtenti* lista, FILE*fp);
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp);
 void checkListaUtenti(char* data, struct nodoUtenti* lista, FILE*fp);
 bool isNumeroRosso(int numero);
@@ -218,22 +218,15 @@ void *connection_handler(void* parametri)
                  printf("Sto stampando prima del register \n riga 165: \n");
                 StampaLista(lista);
 		    pthread_mutex_lock( & SEMAFORO); // INIZIO MEMORIA CRITICA
-            if( registraUtente(buff, lista, fp)==1){
+            lista = registraUtente(buff, lista, fp);
                 printf("Sto stampando nel register \n riga 169: \n");
-                StampaLista(lista);
+                if(lista)StampaLista(lista);
                 char *str;
                 str = malloc (sizeof (char) * MAX_SIZE);
                 strcpy (str, "register_success\n\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
-            } else{
-                char *str;
-                str = malloc (sizeof (char) * MAX_SIZE);
-                strcpy (str, "register_fail");
-                strcat (str, "\n");
-                send(newSocket, str, strlen(str), 0);
-                printf("%s", str);
-            }
+          
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
 
@@ -682,16 +675,16 @@ int inserisciScommessa(struct nodoUtenti* lista, char* numero, char*nome, char*a
 char* checkUtentiOnline(char* data, struct nodoUtenti* lista, FILE*fp){
     char listaOnline[MAX_SIZE];
     int len=LunghezzaLista(lista);
+    memset(utentiOnline, 0, strlen(utentiOnline));
    
-
     for(int i=0; i<len; i++){
         if(lista->isOnline == 1){
         strcat (utentiOnline, lista->nickname);
         strcat(utentiOnline, ",,");
          int gettoni = lista->gettoni;
-            char str[20];
-        sprintf(str, "%d", gettoni);
-        strcat(utentiOnline, str);
+            char strg[20];
+        sprintf(strg, "%d", gettoni);
+        strcat(utentiOnline, strg);
         strcat(utentiOnline, ",,");
         }
         lista=lista->next;
@@ -707,6 +700,7 @@ void checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
     if(!fp) {perror("ERRORE\n"); exit(0);}
     struct nodoUtenti* tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     tmp=LeggiFile(tmp, fp);
+    fclose(fp);
     StampaLista(tmp);
     strcpy(listaUtentiExt, "");
 
@@ -729,7 +723,7 @@ void checkListaUtenti (char* data, struct nodoUtenti* lista, FILE*fp){
     //return listaUtenti; //o inviare il messaggio direttamente
 }
 
-int registraUtente(char* data, struct nodoUtenti* lista, FILE*fp){
+struct nodoUtenti* registraUtente(char* data, struct nodoUtenti* lista, FILE*fp){
     //struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
     //tmp = lista; //salvo la testa
     //register = 8 - 10
@@ -765,11 +759,11 @@ printf("Dopo inserimento in coda \n");
 fp=fopen("Utenti.txt", "w");
  if(!fp) {perror("ERRORE\n"); exit(0);}
 StampaListaToFileInOrdine(lista, fp);
-
 StampaLista(lista);
 fclose(fp);
+
 scriviLogSuFile("Registrazione effettuata\n");
-return 1;
+return lista;
 
 }
 
