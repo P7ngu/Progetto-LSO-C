@@ -26,6 +26,7 @@ char utentiOnline[MAX_SIZE];
 char listaUtentiExt[MAX_SIZE];
 FILE *currentFileServerLog;
 
+struct nodoUtenti* aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista);
 void scriviLogSuFile(char* message);
 void *connection_handler(void*socket_desc);
 void* startTheTimer();
@@ -313,7 +314,7 @@ void *connection_handler(void* parametri)
                 strcat (str, "**\n");
                 send(newSocket, str, strlen(str), 0);
                 printf("%s", str);
-                if(lista) aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
+                if(lista) lista=aggiornaDatiUtentiDopoBet(numeroEstratto, lista);
             pthread_mutex_unlock( & SEMAFORO); // FINE MEMORIA CRITICA
             }
               if (strncmp("latestnumber", buff, 12) == 0){
@@ -396,41 +397,45 @@ scriviLogSuFile("Aggiornamento file completato\n");
 
 }
 
-aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
+struct nodoUtenti* aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
     printf("\n Lista prima aggiornamento ");
     StampaLista(lista);
-    struct nodoUtenti*tmp=(struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
-    tmp = lista; //salvo la testa
+    struct nodoUtenti* tmp = (struct nodoUtenti*)malloc(sizeof(struct nodoUtenti));
+    tmp =lista;
     tmp->next=lista->next;
+
     int lung=LunghezzaLista(lista);
+    printf("\n end\n");
+
     for(int i=0; i<lung; i++){  
     if(lista->numeroPuntato == numero){
         printf("\n Match, vittoria \n");
-    //Aggiornare i crediti
     lista->numeroPuntato=-1;
-    //Vincita
     lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
     lista->gettoniPuntati=0;
-    lista=lista->next;
+    if(lista->next) lista=lista->next;
+
     }else if(lista->numeroPuntato < 37) { //Sconfitta
     lista->numeroPuntato=-1;
     lista->gettoniPuntati=0;
-    lista=lista->next;
+    if(lista->next) lista=lista->next;
         }
         else{// Bet speciale
+        printf("La bet non era su numeri da 1 a 36... /t");
         
         if(lista->numeroPuntato==37){//Rossi
+        printf("La bet era su Numeri Rossi /t");
         if(isNumeroRosso(numero)){ //Vinto
         //Aggiornare i crediti
         lista->numeroPuntato=-1;
         //Vincita
         lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
         lista->gettoniPuntati=0;
-        lista=lista->next;
+        if(lista->next) lista=lista->next;
         } else { //Perso, non è uscito un rosso
             lista->numeroPuntato=-1;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
         }
         }//Fine check Rossi
 
@@ -439,11 +444,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
         lista->numeroPuntato=-1;
         lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
         lista->gettoniPuntati=0;
-        lista=lista->next;
+        if(lista->next) lista=lista->next;
         } else { //Perso, non è uscito un nero
             lista->numeroPuntato=-1;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
         }
         } //Fine check neri
 
@@ -452,12 +457,12 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
 
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check dispari
@@ -467,11 +472,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check pari
@@ -481,11 +486,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check bassi
@@ -495,11 +500,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+           if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check alti
@@ -509,11 +514,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check 1°colonna
@@ -523,11 +528,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+            if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check 2°colonna
@@ -537,11 +542,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
             lista->numeroPuntato=-1;
             lista->gettoni = lista->gettoni + (lista->gettoniPuntati)*30;
             lista->gettoniPuntati=0;
-            lista=lista->next;
+           if(lista->next) lista=lista->next;
             } else {
                  lista->numeroPuntato=-1;
                 lista->gettoniPuntati=0;
-                lista=lista->next;
+                if(lista->next) lista=lista->next;
 
             }
         } //Fine check 3°colonna
@@ -553,11 +558,11 @@ aggiornaDatiUtentiDopoBet(int numero, struct nodoUtenti* lista){
         }//Fine scorrimento lista
 
     printf("\nLista dopo aggiornamento ");
-    lista=tmp;
-    lista->next=tmp->next;
-    StampaLista(tmp);
-    aggiornaFileUtenteDopoBet(lista);  
+    
+    if(tmp)StampaLista(tmp);
+    aggiornaFileUtenteDopoBet(tmp);  
     scriviLogSuFile("Aggiornamento lista completato\n");
+    return tmp;
 }
 
 //Check numeri
