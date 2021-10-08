@@ -105,46 +105,62 @@ int main(int argc, char* argv[]){
     }
     printf("[*]Bind to port %d\n", PORT);
 
-    if(listen(socketfd, 10) == 0){
+    if(listen(socketfd, 10) == 0){ //10 max parallel requests queued
         printf("Listening...\n");
         scriviLogSuFile("Bind effettuato, in ascolto...\n");
     }else{
         printf("Error in binding\n");
     }
+    pthread_t tid[60];
+    int i=0;
 
-   while( (newSocket = accept(socketfd, (struct sockaddr*)&newAddr, &addr_size) )){
-    if( newSocket < 0){
-        fprintf(stderr, "socket() failed: %s\n", strerror(errno));
-        printf("No socket: %d\n", newSocket);
-        exit(1);
+    while(1){
+        //Accept creates a new socket for the incoming connection
+
+        while( (newSocket = accept(socketfd, (struct sockaddr*)&newAddr, &addr_size) )){
+            if( newSocket < 0){
+             fprintf(stderr, "socket() failed: %s\n", strerror(errno));
+             printf("No socket: %d\n", newSocket);
+             exit(1);
+            }
+            else puts("Connection accepted");
+            scriviLogSuFile("Connessione accettata\n");
+
+            pthread_t new_thread;
+            new_sock=malloc(1);
+            *new_sock=newSocket;
+
+            struct param_thread* parametri=CreaParametriThread(new_sock, fp, "", "", "", "", "", lista);
+            //for each client request creates a thread and assign the client request to it to process
+            //so the main thread can entertain next request
+            if( pthread_create(&tid[i++], NULL, connection_handler, (void*) parametri) != 0 )
+            printf("Failed to create thread\n");
+
+            if( i >= 10)
+            {
+                i = 0;
+                while(i < 10){
+                    pthread_join(tid[i++],NULL);
+                    puts("Handler assigned");
+                    scriviLogSuFile("Handler assegnato\n");
+                } 
+                i = 0;
+            }
+        }
+
+        if(newSocket < 0){
+            perror("Accept failed");
+            return 1;
+        }
     }
-    else puts("Connection accepted");
-    scriviLogSuFile("Connessione accettata\n");
 
-    pthread_t new_thread;
-    new_sock=malloc(1);
-    *new_sock=newSocket;
-
-    struct param_thread* parametri=CreaParametriThread(new_sock, fp, "", "", "", "", "", lista);
-
-    if(pthread_create (&new_thread, NULL, connection_handler, (void*) parametri) <0){
-        perror("Error while creating thread");
-        return 1;
-    }
-    pthread_join(new_thread, NULL);
-    puts("Handler assigned");
-    scriviLogSuFile("Handler assegnato\n");
-   }
-
-   if(newSocket < 0){
-       perror("Accept failed");
-       return 1;
-   }
-
-  
-   fclose(currentFileServerLog);
-   return 0;
+        fclose(currentFileServerLog);
+    return 0;
 }
+
+
+            
+            
 
 void scriviLogSuFile(char* message){
      currentFileServerLog = fopen("ServerLog.txt", "a");
