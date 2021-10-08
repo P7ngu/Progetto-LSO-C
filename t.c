@@ -12,6 +12,7 @@
 #include <time.h>
 #include "test2.c"
 
+#define MAX_CONNECTION 20
 #define MAX_CHAR 100
 #define PORTDEFAULT 18000
 #define MAX_SIZE 128
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]){
     }
     printf("[*]Bind to port %d\n", PORT);
 
-    if(listen(socketfd, 10) == 0){ //10 max parallel requests queued
+    if(listen(socketfd, MAX_CONNECTION) == 0){ //10 max parallel requests queued
         printf("Listening...\n");
         scriviLogSuFile("Bind effettuato, in ascolto...\n");
     }else{
@@ -136,10 +137,10 @@ int main(int argc, char* argv[]){
             if( pthread_create(&tid[i++], NULL, connection_handler, (void*) parametri) != 0 )
             printf("Failed to create thread\n");
 
-            if( i >= 10)
+            if( i >= MAX_CONNECTION)
             {
                 i = 0;
-                while(i < 10){
+                while(i < MAX_CONNECTION){
                     pthread_join(tid[i++],NULL);
                     puts("Handler assigned");
                     scriviLogSuFile("Handler assegnato\n");
