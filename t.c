@@ -755,7 +755,7 @@ remove_spaces(part1);
 
 if(contains(lista, part2)){
     printf("Username già esistente \n");
-return 0;
+//return 0;
 } 
 printf("Prima inserimento in coda \n");
 lista = InserisciCoda(lista, part2, part3, GETTONI_INIZIALI, 1, -1, -1);
